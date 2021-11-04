@@ -110,7 +110,7 @@ Multi Threading을 사용한다.
   
   
 ## main()
-커스텀 명령어기능의 CommandThread와 접속된 Client들을 관리하는 	checkConnectionListThread를 생성하고 실행시킨다.  
+커스텀 명령어기능의 CommandThread와 접속된 Client들을 관리하는 checkConnectionListThread를 생성하고 실행시킨다.  
 Client의 접속 요청을 처리할 ThreadPool을 생성한다.  
 포트를 개방하고 Client의 접속을 처리한다.  
 
@@ -170,5 +170,43 @@ try {
   }
  }
 }
+```
+
+## FactoryThread
+작업 큐에서 요청을 가져와 처리한다.   
+FactoryThread 안의 whoIsClient() 함수를 이용하여 Client가 스마트폰인지 아두이노 인지 판단한다.
+판단하는 작업은 간단한 문자열 키를 사용하였다.
+
+
+```java
+//Client의 종류를 판단하는 함수
+	private int whoIsClient() {
+		try {
+			long time = System.currentTimeMillis();
+			while (true) {
+			// Client로 부터 요청 인증 KEY를 읽는다.
+				if (dataInputStream.available() > 0) {
+					byte[] buffer = new byte[20];
+					dataInputStream.read(buffer);
+					String recv = new String(buffer).trim();
+					//System.out.println(recv);
+					switch (recv) {
+					case "아두이노 인증 KEY":
+						return 0;
+					case "스마트폰 인증 KEY":
+						return 1;
+					default :
+						return -1;
+					}				
+				} else {
+					// TimeOut
+					if (System.currentTimeMillis() - time > 6000)
+						return -1;
+				}
+			}
+		} catch (IOException e) {			
+			return -1;
+		}
+	}
 ```
 
