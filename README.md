@@ -174,8 +174,8 @@ try {
 
 ## FactoryThread
 작업 큐에서 요청을 가져와 처리한다.   
-FactoryThread 안의 whoIsClient() 함수를 이용하여 Client가 스마트폰인지 아두이노 인지 판단한다.
-판단하는 작업은 간단한 문자열 키를 사용하였다.
+FactoryThread 안의 whoIsClient() 함수를 이용하여 Client가 스마트폰인지 아두이노 인지 판단한다.  
+판단하는 작업은 간단한 문자열 키를 사용한다.  
 
 
 ```java
@@ -209,5 +209,76 @@ FactoryThread 안의 whoIsClient() 함수를 이용하여 Client가 스마트폰
 			return -1;
 		}
 	}
+```
+
+## FactoryThread run()
+판단된 클라이언트 종류에 따라 최대 동시 접속 가능 수를 확인하고 해당하는 (아두이노 or 스마트폰)Thread를 만들어 실행 시킨다.  
+
+
+```java
+	@Override
+	public void run() {
+		try {
+			if (client == null)
+				return;
+			System.out.println("소켓 연결");
+			InetAddress ia = client.getInetAddress();
+			String clientIp = ia.getHostAddress(); // 접속 Client ip
+			
+			//  접속한 Client 구분
+			switch (whoIsClient()) {
+			// 아두이노 접속
+			case 0: {
+				System.out.println("Arduino 접속");
+				System.out.println("Arduino ip : " + clientIp);
+				
+				// 최대 동시 접속 확인 
+				if (Server.arduinoList.size() < MAX_ARDUINO_NUM) {
+					ArduinoThread arduino = new ArduinoThread(client);		
+					arduino.start();
+					Server.arduinoList.add(arduino);		
+
+				} 
+				// 최대 동시 접속 초과
+				else {
+					System.out.println("최대 Arduino 기기 개수 초과 , 소켓 연결 해제");
+					CloseClass.closeOutStream(	dataOutputStream);
+					CloseClass.closeSocket(client);	
+				}
+			}
+				break;
+			// 스마트폰 접속
+			case 1: {
+				System.out.println("Smartphone 접속");
+				System.out.println("Smartphone ip : " + clientIp);
+				// 최대 동시 접속 확인 
+				if (Server.mobileList.size() < MAX_MOBILE_NUM) {
+					MobileThread mobile = new MobileThread(client);
+					mobile.start();
+					Server.mobileList.add(mobile);					
+				}
+				// 최대 동시 접속 초과
+				else {
+					System.out.println("최대 Smartphone 개수 초과 , 소켓 연결 해제");					
+					CloseClass.closeOutStream(	dataOutputStream);
+					CloseClass.closeSocket(client);	
+				
+				}
+			}
+				break;
+			// 에러, 미허용된 접속자
+			case -1: {
+				System.out.println("허용되지 않은 접속, 소켓 연결 해제");
+				
+				//소켓 종료
+				CloseClass.closeOutStream(dataOutputStream);
+				CloseClass.closeSocket(client);
+			}
+				break;
+			}
+
+		} catch (Exception e) {
+			System.out.println("ThreadFactory 에러 발생");
+		}
 ```
 
