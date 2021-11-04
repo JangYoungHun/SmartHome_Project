@@ -195,6 +195,7 @@ FactoryThread 안의 whoIsClient() 함수를 이용하여 Client가 스마트폰
 						return 0;
 					case "스마트폰 인증 KEY":
 						return 1;
+					//요청 거절
 					default :
 						return -1;
 					}				
