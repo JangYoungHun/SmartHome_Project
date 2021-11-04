@@ -153,7 +153,7 @@ client = serverSocket.accept();
  factoryThreadPool.submit(new FactoryThread(client));
 }
 }catch (Exception e) {
-			}finally {
+ }finally {
 try {
 // 자원 정리  
  checkConnectionListThread.closeThread();
