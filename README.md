@@ -9,7 +9,7 @@
 
 ## 아두이노  
 ### WIFI Module ESP-01  
-ESP-01 의 AP 명령어를 사용하여 공유기에 접속하여 IP를할당 받고 서버에 접속을 시도한다.
+ESP-01 의 AP 명령어를 사용하여 공유기에 접속하여 IP를할당 받고 서버에 접속을 시도한다.  
 현재 집안의 상태를 읽어 상태가 변경되면 서버에 최신 정보를 업데이트 한다.
 
 ### Wifi 접속 코드
@@ -17,6 +17,8 @@ ESP-01 의 AP 명령어를 사용하여 공유기에 접속하여 IP를할당 �
 String ssid = " network SSID (name) "; 
 String pass = " network password ";     
 String domain = " server domain "; 
+String port = "";  // server port
+String typeTU = "";  // TCP or UDP
 
 bool connectWifi(){
 
@@ -87,3 +89,5 @@ void sendData(String message){
      preTime=millis();
 }
 ```
+
+## SERVER
