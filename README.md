@@ -2,7 +2,7 @@
 기존의 2D UI의 스마트홈 제어 앱은 집의 전체적인 상태를 한눈에 파악하기 어렵다.  
 이러한 문제점을 해결하기 위해 3D 스마트홈 제어 앱을 제작하였다.
 
-## APP 
+# APP 
 ![wlq](https://user-images.githubusercontent.com/81062639/140068495-4384d1ed-2fe8-4b1e-92de-25c93afce646.PNG)
 
 ## 전체적인 구조
@@ -14,12 +14,13 @@ Android Studio 와 Unity를 이용하여 제어 앱을 제작하여 아두이노
 
 
 
-## 아두이노  
-### WIFI Module ESP-01  
-ESP-01 의 AP 명령어를 사용하여 공유기에 접속하여 IP를할당 받고 서버에 접속을 시도한다.  
-현재 집안의 상태를 읽어 상태가 변경되면 서버에 최신 정보를 업데이트 한다.
+# 아두이노  
+## WIFI Module ESP-01  
+ESP-01 의 AP 명령어를 사용하여 공유기에 접속하여 IP를할당 받고 서버에 접속을 시도한다.    
+현재 집안의 상태를 읽어 상태가 변경되면 서버에 최신 정보를 업데이트 한다.  
 
-### Wifi 접속 코드
+
+## Wifi 접속 코드
 네트워크와 서버 접속과 관련된 코드.
 
 ```c
@@ -61,7 +62,7 @@ bool connectWifi(){
   }
 }
 ```
-### Server 접속 코드
+## Server 접속 코드
 ```c
 void connectServer(){
    bool result = false;
@@ -83,9 +84,10 @@ void connectServer(){
    preTime = millis();  
   }
 ```
-### Server Data 전송 코드
+## Server Data 전송 코드
 ```c
 void sendData(String message){   
+   //ESP-01 AT DATA 전송 명령어 
    Serial1.println("AT+CIPSEND=" + String(message.length()));
    delay(100);
    Serial1.println(message);
@@ -99,10 +101,74 @@ void sendData(String message){
 }
 ```
 
-## SERVER
+# SERVER
 
-### 서버 구조
+## 서버 구조
 Multi Threading을 사용한다. 
-![서버구조](https://user-images.githubusercontent.com/81062639/140278490-f4a0ea3d-eff8-45e6-b6af-488835f89837.png)
+![서버구조](https://user-images.githubusercontent.com/81062639/140278490-f4a0ea3d-eff8-45e6-b6af-488835f89837.png)   
 
+  
+  
+## main()
+커스텀 명령어기능의 CommandThread와 접속된 Client들을 관리하는 	checkConnectionListThread를 생성하고 실행시킨다.  
+Client의 접속 요청을 처리할 ThreadPool을 생성한다.  
+포트를 개방하고 Client의 접속을 처리한다.  
+
+
+
+```java
+public static void main(String[] args) {
+System.out.println("서버 실행");
+
+Socket client = null;
+		
+// 커스텀 명령어 Thread
+CommandThread commandThread;
+CheckConnectionListThread checkConnectionListThread;
+  
+// ThreadPool 생성
+// param :  코어쓰레드 수, 최대 쓰레드 수, 놀고있는시간, 시간 단위, 작업 큐  
+ExecutorService factoryThreadPool = new ThreadPoolExecutor(1,3,5L,TimeUnit.MINUTES,new SynchronousQueue<Runnable>());
+
+		
+//연결된 소켓 연결상태 확인, 관리 Thread 시작
+checkConnectionListThread = CheckConnectionListThread.getInstance();
+checkConnectionListThread.start();
+  
+//명령어 Thread 시작
+commandThread = CommandThread.getInstance();
+commandThread.setDaemon(true);
+commandThread.start();
+
+try {
+// 포트 개방
+serverSocket = new ServerSocket(port);
+
+while (!serverClose) {
+// 최대 연결 개수 4			
+// Client 연결 대기
+client = serverSocket.accept();
+ 
+//Client 접속 시 factoryThreadPoold에 넣는다.
+ factoryThreadPool.submit(new FactoryThread(client));
+}
+}catch (Exception e) {
+			}finally {
+try {
+// 자원 정리  
+ checkConnectionListThread.closeThread();
+ CloseClass.closeSocket(client);
+ CloseClass.closeServerSocket(serverSocket);				
+ CloseClass.closeArduinoList(arduinoList);
+ CloseClass.closeMobileList(mobileList);
+ CloseClass.closeThreadPool(factoryThreadPool);				
+ commandThread.closeThread();			
+ Thread.sleep(2000);
+ System.out.println("서버 종료");
+}catch (Exception e) {
+ e.printStackTrace();
+  }
+ }
+}
+```
 
