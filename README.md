@@ -5,6 +5,13 @@
 ## APP 
 ![wlq](https://user-images.githubusercontent.com/81062639/140068495-4384d1ed-2fe8-4b1e-92de-25c93afce646.PNG)
 
+## 전체적인 구조
+Android Studio 와 Unity를 이용하여 제어 앱을 제작하여 아두이노와 서버를 통해 데이터를 교환하고 처리한다.     
+제어 앱에서 집안 상태 변경 요청을 서버에 전송하면 서버가 아두이노에게 명령을 보내고 아두이노가 명령을 받아 처리, 수행한다.  
+명령 처리 결과인 현재 상태를 서버에 전송하여 업데이트하면 제어 앱은 서버에서 최신 상태 정보를 받아 화면 UI를 업데이트 한다.  
+
+![fdsafds](https://user-images.githubusercontent.com/81062639/140278085-a8a7f8b5-87b0-4d57-b037-c9d9b1c21da5.PNG)
+
 
 
 ## 아두이노  
@@ -13,6 +20,8 @@ ESP-01 의 AP 명령어를 사용하여 공유기에 접속하여 IP를할당 �
 현재 집안의 상태를 읽어 상태가 변경되면 서버에 최신 정보를 업데이트 한다.
 
 ### Wifi 접속 코드
+네트워크와 서버 접속과 관련된 코드.
+
 ```c
 String ssid = " network SSID (name) "; 
 String pass = " network password ";     
@@ -91,3 +100,9 @@ void sendData(String message){
 ```
 
 ## SERVER
+
+### 서버 구조
+Multi Threading을 사용한다. 
+![서버구조](https://user-images.githubusercontent.com/81062639/140278490-f4a0ea3d-eff8-45e6-b6af-488835f89837.png)
+
+
