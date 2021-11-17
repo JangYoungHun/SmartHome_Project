@@ -31,7 +31,6 @@ public class FactoryThread extends Thread {
 		try {
 			if (client == null)
 				return;
-
 			System.out.println("家南 楷搬");
 			InetAddress ia = client.getInetAddress();
 			String clientIp = ia.getHostAddress(); // 立加 Client ip
@@ -102,15 +101,13 @@ public class FactoryThread extends Thread {
 						return 1;
 					default :
 						return -1;
-					}
-					
+					}				
 				} else {
 					if (System.currentTimeMillis() - time > 6000)
 						return -1;
 				}
 			}
-		} catch (IOException e) {
-			
+		} catch (IOException e) {			
 			return -1;
 		}
 	}

@@ -44,7 +44,7 @@ public class CommandThread extends Thread {
 					case "show connections" :{
 						CheckConnectionListThread thread = CheckConnectionListThread.getInstance();
 						if(thread !=null) {
-							thread.showConnections();
+							thread.showConnections(); 
 						}
 						else {
 							System.out.println("CheckConnectionListThread 상태를 확인해주세요");

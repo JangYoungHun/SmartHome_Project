@@ -38,8 +38,8 @@ public class Plugin {
     Socket socket;
     connectServerThread thread;
     final static String ERROR_TAG = "ERROR 발생 ";
-    final static String ADDRESS = "mrjangsserver.ddns.net";
-    final static int PORT = 8888;
+    final static String ADDRESS = "도메인 주소";
+    final static int PORT = 8888; //  포트번호
     private Context context;
 
     private static Plugin instance;

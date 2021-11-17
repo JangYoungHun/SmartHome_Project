@@ -32,7 +32,7 @@ public class Server {
 		
 		CommandThread commandThread;
 		CheckConnectionListThread checkConnectionListThread;
-		// params :  코어쓰레드 수, 최대 쓰레드 수, 놀고있는시간, 시간 단위, 작업 큐
+		// param :  코어쓰레드 수, 최대 쓰레드 수, 놀고있는시간, 시간 단위, 작업 큐
 		ExecutorService factoryThreadPool = new ThreadPoolExecutor(1,3,5L,TimeUnit.MINUTES,new SynchronousQueue<Runnable>());
 
 		
