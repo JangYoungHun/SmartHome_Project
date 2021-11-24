@@ -6,7 +6,9 @@
 ![wlq](https://user-images.githubusercontent.com/81062639/140068495-4384d1ed-2fe8-4b1e-92de-25c93afce646.PNG)
 
 ## 전체적인 구조
-Android Studio 와 Unity를 이용하여 제어 앱을 제작하여 아두이노와 서버를 통해 데이터를 교환하고 처리한다.     
+Android Studio 와 Unity를 이용하여 제어 앱을 제작하여 아두이노와 서버를 통해 데이터를 교환하고 처리한다.  
+Android Native 의 기능을 사용하기위해 Android Plugin을 제작 하고 Unity에서 해당 Plugin을 사용한다.
+
 제어 앱에서 집안 상태 변경 요청을 서버에 전송하면 서버가 아두이노에게 명령을 보내고 아두이노가 명령을 받아 처리, 수행한다.  
 명령 처리 결과인 현재 상태를 서버에 전송하여 업데이트하면 제어 앱은 서버에서 최신 상태 정보를 받아 화면 UI를 업데이트 한다.  
 
