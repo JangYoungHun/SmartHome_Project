@@ -1,19 +1,255 @@
 # SmartHome_Project
-기존의 2D UI의 스마트홈 제어 앱은 집의 전체적인 상태를 한눈에 파악하기 어렵다.  
-이러한 문제점을 해결하기 위해 3D 스마트홈 제어 앱을 제작하였다.
+기존의 2D UI의 스마트홈 제어 앱은 집의 전체적인 상태를 한눈에 파악하기 어렵다.    
+이러한 문제점을 해결하기 위해 3D 스마트홈 제어 앱을 제작하였다.  
+
+# 사용한 기술
+## Android  
+> + Socket(Client)
+> + TTS(Text to Speech)
+> + STT(Speech-to-Text)  
+## Java
+> + Multi Threading
+>> - Thread
+>> - ThreadPool
+> + Socket(Server)
+
+## Unity  
+ 
 
 # APP 
 ![wlq](https://user-images.githubusercontent.com/81062639/140068495-4384d1ed-2fe8-4b1e-92de-25c93afce646.PNG)
 
 ## 전체적인 구조
-Android Studio 와 Unity를 이용하여 제어 앱을 제작하여 아두이노와 서버를 통해 데이터를 교환하고 처리한다.  
-Android Native 의 기능을 사용하기위해 Android Plugin을 제작 하고 Unity에서 해당 Plugin을 사용한다.
+Android Studio 와 Unity를 이용하여 제어 앱을 제작하여 아두이노와 서버를 통해 데이터를 교환하고 처리한다.    
+Android Native 의 기능을 사용하기위해 Android Plugin을 제작 하고 Unity에서 해당 Plugin을 사용한다.  
 
 제어 앱에서 집안 상태 변경 요청을 서버에 전송하면 서버가 아두이노에게 명령을 보내고 아두이노가 명령을 받아 처리, 수행한다.  
 명령 처리 결과인 현재 상태를 서버에 전송하여 업데이트하면 제어 앱은 서버에서 최신 상태 정보를 받아 화면 UI를 업데이트 한다.  
 
 ![fdsafds](https://user-images.githubusercontent.com/81062639/140278085-a8a7f8b5-87b0-4d57-b037-c9d9b1c21da5.PNG)
 
+# Android Studio
+Native 기능을 사용하기 위해 Plugin을 제작한다.
+## 사용한 기능  
+> + 서버 접속
+> + TTS(Text to Speech)
+> + STT(Speech-to-Text)
+
+
+### 서버 접속
+서버(TCP Socket)에 접속하는 Thread를 작성.
+서버에 데이터를 송신하고 서버로 부터 데이터를 수신받아 Unity에서 사용할 수 있도록 한다.
+서버와의 접속 상태를 주기 적으로 확인한다.
+```Java
+class connectServerThread extends Thread {
+
+        // 접속 소켓
+        Socket socket;
+        DataInputStream dataInputStream;
+        DataOutputStream dataOutputStream;
+        boolean stopThread = false;
+
+        // 마지막으로 서버와 상호작용한 시간
+        long preTime;
+        // 서버와의 연결 상태를 확인하는 시간 간격
+        long connectionCheckInterval = 5000;
+
+        connectServerThread(Socket socket) {
+            this.socket = socket;
+        }
+
+        //초기화 함수
+        // 데이터 통신을 위한 소켓의 입출력 Stream 을 생성한다.
+        void init() {
+            try {
+                dataInputStream = new DataInputStream(socket.getInputStream());
+                dataOutputStream = new DataOutputStream(socket.getOutputStream());
+                dataOutputStream.write("Mb".getBytes());
+                //마지막 상호작용 시간을 업데이트 한다.
+                preTime =  System.currentTimeMillis();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+	
+	
+	        // 서버에 데이터를 전송하는 함수
+        void sendData(String data){
+            if(dataOutputStream!=null){
+                try {
+                    dataOutputStream.write(data.getBytes());
+                }catch (Exception e){
+                    showToast("data 전송 실패");
+                }
+            }
+        }
+
+	
+        // Thread를 종료 시키기 위한 변수를 성정하는 함수.
+        public void setStopThread(boolean stopThread) {
+            this.stopThread = stopThread;
+        }
+
+        @Override
+        public void run() {
+
+            // Thread 초기화
+            init();
+
+            try {
+                while (socket != null && !stopThread) {
+
+                    //서버로부터 데이터를 수신한다.
+
+                    if (dataInputStream.available() > 0) {
+                        Thread.sleep(200);
+                        byte[] buffer = new byte[dataInputStream.available()];
+                        dataInputStream.read(buffer);
+                        String recv = new String(buffer);
+
+                        //받은 데이터를 처리하여 Unity의 함수에 전달한다.
+                        if(recv != "")
+                           UnityPlayer.UnitySendMessage("GameObject", "ReadBlutoothData", recv);
+
+                        preTime =  System.currentTimeMillis();
+                    }
+                    else {
+                        // 마지막으로 서버와 상호작용한 시간이 설정 시간을 넘을 경우 서버에 연결상태 확인 데이터를 보낸다.
+                        if((System.currentTimeMillis() - preTime) > connectionCheckInterval) {
+                            try {
+                                dataOutputStream.write("ck".getBytes());
+                                preTime = System.currentTimeMillis() ;
+                            }catch (Exception e) {
+                                //연결 상태가 불량일 시 연결을 종료한다.
+                                showToast("서버 종료");
+                                break;
+                            }
+                        }
+                    }
+                }
+                //서버와의 연결 종료를 Unity에게 알린다.
+                UnityPlayer.UnitySendMessage("GameObject", "ReadServerMessage", "0");
+
+            //에러 발생시
+            } catch (Exception e) {
+                e.printStackTrace();
+                //서버와의 연결 종료를 Unity에게 알린다.
+                UnityPlayer.UnitySendMessage("GameObject", "ReadServerMessage", "0");
+            } finally {
+                // 자원 정리
+                try {
+                    if (dataInputStream != null)
+                        dataInputStream.close();
+                    if (dataOutputStream != null)
+                        dataOutputStream.close();
+                    if (socket != null)
+                        socket.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+```
+
+### TTS(Text to Speech)
+사용자에게 특정한 알람을 소리로 알려주기 위해 사용한 기능이다.    
+문자열을 입력받아 소리내어 읽어 준다.  
+
+
+```java
+  //문자열을 받아 소리로 변환해주는 함수
+    void makeTTS(String str) {
+        if (TTS == null) {
+            // TTS 언어 설정
+            TTS = new TextToSpeech(context, status -> {
+                if (status != -1)
+                    TTS.setLanguage(Locale.KOREA);
+            });
+        }
+        TTS.setPitch(1f); // 톤설정
+        TTS.setSpeechRate(1f);   // 말 속도 설정;
+        TTS.speak(str, TextToSpeech.QUEUE_FLUSH, null, TextToSpeech.Engine.KEY_PARAM_UTTERANCE_ID);
+    }
+```
+
+
+### STT(Speech-to-Text)
+음성인식 기능  
+사용자의 음성 입력을 인식하고 문자열로 변환해주는 함수   
+ 
+
+```java
+ // 음성인식 기능 
+    // 사용자의 음성인식을 문자열로 변환해주는 함수
+    void makeSTT() {
+
+        if (recognitionListener == null) {
+            // 음성인식 Listener를 등록한다.
+            recognitionListener = new RecognitionListener() {
+                @Override
+                public void onReadyForSpeech(Bundle params) {
+                    final ToneGenerator tg = new ToneGenerator(AudioManager.STREAM_MUSIC, 100);
+                    tg.startTone(ToneGenerator.TONE_PROP_BEEP, 400);
+                    Toast.makeText(context, "음성인식 시작.", Toast.LENGTH_SHORT).show();
+
+                }
+
+ ---------------------------------------------------중략 ------------------------------------------------------	
+
+                //에러발생시 종류에 따른 에러 처리
+                @Override
+                public void onError(int error) {
+                    String message;
+                    switch (error) {
+                        case SpeechRecognizer.ERROR_AUDIO:
+                            message = "오디오 에러";
+                            break;
+                        case SpeechRecognizer.ERROR_CLIENT:
+                            message = "클라이언트 에러";
+                            break;
+                        case SpeechRecognizer.ERROR_INSUFFICIENT_PERMISSIONS:
+                            message = "퍼미션 없음";
+                            break;
+                        case SpeechRecognizer.ERROR_NETWORK:
+                            message = "네트워크 에러";
+                            break;
+                        case SpeechRecognizer.ERROR_NETWORK_TIMEOUT:
+                            message = "네트웍 타임아웃";
+                            break;
+                        case SpeechRecognizer.ERROR_NO_MATCH:
+                            message = "찾을 수 없음";
+                            break;
+                        case SpeechRecognizer.ERROR_RECOGNIZER_BUSY:
+                            message = "RECOGNIZER 가 바쁨";
+                            break;
+                        case SpeechRecognizer.ERROR_SERVER:
+                            message = "서버가 이상함";
+                            break;
+                        case SpeechRecognizer.ERROR_SPEECH_TIMEOUT:
+                            message = "말하는 시간초과";
+                            break;
+                        default:
+                            message = "알 수 없는 오류임";
+                            break;
+                    }
+                    Toast.makeText(context, "에러 : " + message, Toast.LENGTH_SHORT).show();
+                }
+
+                @Override
+                public void onResults(Bundle results) {
+
+                    ArrayList<String> matches = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
+                    for (int i = 0; i < matches.size(); i++) {
+                        STT_Str = (matches.get(i));
+                    }
+                    UnityPlayer.UnitySendMessage("GameObject", "GetSTT_Msg", STT_Str);
+                }
+
+
+      ---------------------------------------------------중략 ------------------------------------------------------	
+            };
+```
 
 
 # 아두이노  
